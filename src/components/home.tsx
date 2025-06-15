@@ -81,20 +81,44 @@ const HomePage = () => {
 
     setMessages((prev) => [...prev, userMessage]);
 
-    // Simulate AI generation
-    setTimeout(() => {
+    try {
+      // Import the API service dynamically to avoid build issues
+      const { generateContent: apiGenerateContent } = await import(
+        "../lib/apiService"
+      );
+
+      const generatedText = await apiGenerateContent({
+        prompt,
+        format,
+        tone,
+        style,
+        wordCount,
+      });
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: "bot",
-        content: generateMockContent(prompt, format, tone, style),
+        content: generatedText,
         timestamp: new Date(),
         format,
         settings: { tone, style, wordCount },
       };
 
       setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error("Error generating content:", error);
+
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: `Sorry, I encountered an error while generating your ${format}. Please check that your API key is configured correctly and try again. Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        timestamp: new Date(),
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsGenerating(false);
-    }, 2000);
+    }
   };
 
   const generateMockContent = (
