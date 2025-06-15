@@ -1,10 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "./HeroSection";
-import GeneratorForm from "./GeneratorForm";
-import OutputDisplay from "./OutputDisplay";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { Separator } from "./ui/separator";
+import { Card, CardContent } from "./ui/card";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Slider } from "./ui/slider";
 import {
   ArrowDown,
   Check,
@@ -13,15 +23,110 @@ import {
   Settings,
   Share2,
   Sparkles,
+  Send,
+  Bot,
+  User,
+  Download,
+  RefreshCw,
 } from "lucide-react";
 
+interface Message {
+  id: string;
+  type: "user" | "bot";
+  content: string;
+  timestamp: Date;
+  format?: "poem" | "essay";
+  settings?: {
+    tone: string;
+    style: string;
+    wordCount: number;
+  };
+}
+
 const HomePage = () => {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      type: "bot",
+      content:
+        "Hello! I'm InspiroAI, your creative writing assistant. I can help you generate beautiful poems and essays. Just tell me what you'd like to create and I'll craft something special for you!",
+      timestamp: new Date(),
+    },
+  ]);
+  const [inputValue, setInputValue] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [format, setFormat] = useState<"poem" | "essay">("poem");
+  const [tone, setTone] = useState("casual");
+  const [style, setStyle] = useState("modern");
+  const [wordCount, setWordCount] = useState(250);
+  const [showSettings, setShowSettings] = useState(false);
+
   const scrollToGenerator = () => {
-    const generatorSection = document.getElementById("generator-section");
-    if (generatorSection) {
-      generatorSection.scrollIntoView({ behavior: "smooth" });
+    const chatSection = document.getElementById("chat-section");
+    if (chatSection) {
+      chatSection.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const generateContent = async (prompt: string) => {
+    setIsGenerating(true);
+
+    // Add user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: "user",
+      content: prompt,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Simulate AI generation
+    setTimeout(() => {
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: "bot",
+        content: generateMockContent(prompt, format, tone, style),
+        timestamp: new Date(),
+        format,
+        settings: { tone, style, wordCount },
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+      setIsGenerating(false);
+    }, 2000);
+  };
+
+  const generateMockContent = (
+    prompt: string,
+    format: "poem" | "essay",
+    tone: string,
+    style: string,
+  ) => {
+    if (format === "poem") {
+      return `Here's a ${tone} ${style} poem about "${prompt}":\n\nWhispers of ${prompt.toLowerCase()},\nDancing through the gentle breeze,\nNature's symphony unfolds.\n\nTime flows like water,\nMemories drift through my mind,\nPeaceful reflection.\n\nIn the ${tone} light of dawn,\n${prompt} awakens the soul,\nBeauty surrounds us.`;
+    } else {
+      return `Here's a ${tone} ${style} essay about "${prompt}":\n\nThe concept of ${prompt.toLowerCase()} has evolved significantly in our modern world. As we delve deeper into understanding this topic, we discover layers of complexity that challenge our preconceived notions.\n\nFrom a ${tone} perspective, ${prompt.toLowerCase()} represents more than just a simple concept—it embodies the very essence of human experience and creativity. The ${style} approach to examining this subject reveals fascinating insights that continue to shape our understanding.\n\nIn conclusion, ${prompt.toLowerCase()} remains a compelling subject that deserves our continued attention and study. Its impact on society and individual lives cannot be understated.`;
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputValue.trim() && !isGenerating) {
+      generateContent(inputValue.trim());
+      setInputValue("");
+    }
+  };
+
+  const poemStyles = ["modern", "romantic", "haiku", "sonnet", "free verse"];
+  const essayStyles = [
+    "academic",
+    "narrative",
+    "descriptive",
+    "persuasive",
+    "expository",
+  ];
+  const styles = format === "poem" ? poemStyles : essayStyles;
 
   return (
     <div className="min-h-screen bg-background">
@@ -56,7 +161,7 @@ const HomePage = () => {
             </li>
             <li>
               <Button onClick={scrollToGenerator} variant="outline" size="sm">
-                Get Started
+                Start Chatting
               </Button>
             </li>
           </ul>
@@ -211,9 +316,9 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Generator Section */}
-      <section id="generator-section" className="py-16">
-        <div className="container mx-auto px-4">
+      {/* Chat Section */}
+      <section id="chat-section" className="py-16 min-h-screen">
+        <div className="container mx-auto px-4 max-w-4xl">
           <motion.h2
             className="text-3xl font-bold text-center mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -221,12 +326,219 @@ const HomePage = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            Create Your Poem or Essay Now!
+            Chat with InspiroAI
           </motion.h2>
 
-          <div className="max-w-4xl mx-auto">
-            <GeneratorForm />
-            <OutputDisplay />
+          {/* Chat Container */}
+          <div className="bg-white rounded-xl shadow-lg border h-[600px] flex flex-col">
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg p-3 ${
+                      message.type === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {message.type === "bot" && (
+                        <Bot className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      )}
+                      {message.type === "user" && (
+                        <User className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1">
+                        <div className="whitespace-pre-wrap text-sm">
+                          {message.content}
+                        </div>
+                        {message.type === "bot" && message.format && (
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                const element = document.createElement("a");
+                                const file = new Blob([message.content], {
+                                  type: "text/plain",
+                                });
+                                element.href = URL.createObjectURL(file);
+                                element.download = `inspirai-${message.format}.txt`;
+                                document.body.appendChild(element);
+                                element.click();
+                                document.body.removeChild(element);
+                              }}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Download
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                if (navigator.share) {
+                                  navigator
+                                    .share({
+                                      title: `InspiroAI ${message.format}`,
+                                      text: message.content,
+                                    })
+                                    .catch(console.error);
+                                }
+                              }}
+                            >
+                              <Share2 className="h-3 w-3 mr-1" />
+                              Share
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {isGenerating && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-5 w-5" />
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Settings Panel */}
+            {showSettings && (
+              <div className="border-t p-4 bg-muted/30">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Format</Label>
+                    <RadioGroup
+                      value={format}
+                      onValueChange={(value) =>
+                        setFormat(value as "poem" | "essay")
+                      }
+                      className="flex space-x-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="poem" id="poem-chat" />
+                        <Label
+                          htmlFor="poem-chat"
+                          className="cursor-pointer text-sm"
+                        >
+                          Poem
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="essay" id="essay-chat" />
+                        <Label
+                          htmlFor="essay-chat"
+                          className="cursor-pointer text-sm"
+                        >
+                          Essay
+                        </Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Tone</Label>
+                    <Select value={tone} onValueChange={setTone}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="casual">Casual</SelectItem>
+                        <SelectItem value="formal">Formal</SelectItem>
+                        <SelectItem value="creative">Creative</SelectItem>
+                        <SelectItem value="humorous">Humorous</SelectItem>
+                        <SelectItem value="serious">Serious</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Style</Label>
+                    <Select value={style} onValueChange={setStyle}>
+                      <SelectTrigger className="h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {styles.map((styleOption) => (
+                          <SelectItem key={styleOption} value={styleOption}>
+                            {styleOption.charAt(0).toUpperCase() +
+                              styleOption.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label className="text-sm font-medium">Word Count</Label>
+                    <span className="text-xs">{wordCount} words</span>
+                  </div>
+                  <Slider
+                    min={50}
+                    max={1000}
+                    step={50}
+                    value={[wordCount]}
+                    onValueChange={(value) => setWordCount(value[0])}
+                    className="py-2"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Input Area */}
+            <div className="border-t p-4">
+              <form onSubmit={handleSubmit} className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setShowSettings(!showSettings)}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Input
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Type your theme or topic here..."
+                  className="flex-1"
+                  disabled={isGenerating}
+                />
+                <Button
+                  type="submit"
+                  disabled={!inputValue.trim() || isGenerating}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+              <div className="text-xs text-muted-foreground mt-2 text-center">
+                Current settings: {format} • {tone} tone • {style} style •{" "}
+                {wordCount} words
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -236,7 +548,7 @@ const HomePage = () => {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Get Started?</h2>
           <Button onClick={scrollToGenerator} size="lg" className="mb-12">
-            Create My Poem or Essay <ArrowDown className="ml-2 h-4 w-4" />
+            Start Chatting <ArrowDown className="ml-2 h-4 w-4" />
           </Button>
 
           <Separator className="max-w-md mx-auto mb-8" />
